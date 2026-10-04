@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Armchair,
   CalendarCheck,
@@ -86,6 +87,18 @@ const normalizeBooking = (raw: any): BookingRow => ({
    ========================================================= */
 
 export default function SalonTodayPage() {
+  const navigate = useNavigate();
+
+  const dayendData = localStorage.getItem("dayEndData")
+    ? JSON.parse(localStorage.getItem("dayEndData") as string)
+    : null;
+
+  useEffect(() => {
+    if (!dayendData) {
+      navigate("/dayend");
+    }
+  }, [dayendData]);
+
   const today = new Date();
   const todayDate = today.toISOString().split("T")[0];
 
@@ -288,7 +301,7 @@ export default function SalonTodayPage() {
 
           <button
             type="button"
-            onClick={() => void loadTodaysBookings()}
+            onClick={() => window.location.reload()}
             disabled={isLoading}
             className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 disabled:opacity-60"
           >

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   Banknote,
@@ -213,6 +214,18 @@ const extractResponseData = (payload: unknown): any => {
    ========================================================= */
 
 export default function SalonBookingPage() {
+  const navigate = useNavigate();
+
+  const dayendData = localStorage.getItem("dayEndData")
+    ? JSON.parse(localStorage.getItem("dayEndData") as string)
+    : null;
+
+  useEffect(() => {
+    if (!dayendData) {
+      navigate("/dayend");
+    }
+  }, [dayendData]);
+
   const [workingDays, setWorkingDays] = useState<WorkingDay[]>([]);
   const [isLoadingDays, setIsLoadingDays] = useState(true);
 
@@ -570,10 +583,7 @@ export default function SalonBookingPage() {
 
           <button
             type="button"
-            onClick={() => {
-              void loadWorkingDays();
-              void loadServices();
-            }}
+            onClick={() => window.location.reload()}
             disabled={isLoading}
             className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
           >

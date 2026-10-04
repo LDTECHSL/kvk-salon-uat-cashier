@@ -15,6 +15,7 @@ import {
     X,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import Alert from "@/components/ui/alert";
 import {
     createSalonSeat,
@@ -26,11 +27,11 @@ import {
 interface SeatForm {
     name: string;
     description: string;
+    isActive: boolean;
 }
 
 interface SeatRecord extends SeatForm {
     id: string;
-    isActive: boolean;
 }
 
 type AlertState = {
@@ -40,7 +41,7 @@ type AlertState = {
     description: string;
 };
 
-const initialForm: SeatForm = { name: "", description: "" };
+const initialForm: SeatForm = { name: "", description: "", isActive: true };
 
 type JsonRecord = Record<string, unknown>;
 
@@ -71,6 +72,18 @@ const mapSeat = (seat: JsonRecord): SeatRecord => ({
 });
 
 export default function SeatPage() {
+    const navigate = useNavigate();
+
+    const dayendData = localStorage.getItem("dayEndData")
+        ? JSON.parse(localStorage.getItem("dayEndData") as string)
+        : null;
+
+    useEffect(() => {
+        if (!dayendData) {
+            navigate("/dayend");
+        }
+    }, [dayendData]);
+
     const [seats, setSeats] = useState<SeatRecord[]>([]);
     const [form, setForm] = useState<SeatForm>(initialForm);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -148,7 +161,7 @@ export default function SeatPage() {
 
     const openEditForm = (seat: SeatRecord) => {
         setEditingId(seat.id);
-        setForm({ name: seat.name, description: seat.description });
+        setForm({ name: seat.name, description: seat.description, isActive: seat.isActive });
         setIsFormOpen(true);
     };
 
@@ -165,7 +178,7 @@ export default function SeatPage() {
             id: editingId,
             name: form.name.trim(),
             description: form.description.trim(),
-            isActive: true,
+            isActive: form.isActive,
         };
 
         if (!payload.name) {
@@ -269,7 +282,7 @@ export default function SeatPage() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row">
-                        <button type="button" onClick={loadSeats} disabled={isLoading} className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        <button type="button" onClick={() => window.location.reload()} disabled={isLoading} className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
                             <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} /> Refresh
                         </button>
                         <button type="button" onClick={openAddForm} className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 text-sm font-semibold text-white shadow-lg shadow-purple-300/30 transition hover:from-[#8B5CF6] hover:to-[#6D28D9]">
@@ -334,7 +347,7 @@ function SeatRow({ seat, deletingId, onEdit, onDelete }: { seat: SeatRecord; del
 function ActionButton({ label, icon, onClick, danger = false, disabled = false }: { label: string; icon: React.ReactNode; onClick: () => void; danger?: boolean; disabled?: boolean }) { return <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg border bg-white px-3 text-xs font-semibold transition disabled:opacity-50 ${danger ? "border-red-100 text-red-600 hover:bg-red-50" : "border-purple-100 text-purple-700 hover:bg-purple-50"}`}>{icon}{label}</button>; }
 
 function SeatFormModal({ editingId, form, isSubmitting, setForm, onClose, onSubmit }: { editingId: string | null; form: SeatForm; isSubmitting: boolean; setForm: React.Dispatch<React.SetStateAction<SeatForm>>; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-    return <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget && !isSubmitting) onClose(); }}><div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-white shadow-lg shadow-purple-300/30">{editingId ? <Edit3 size={20} /> : <Armchair size={20} />}</div><div><h2 className="text-xl font-bold text-slate-900">{editingId ? "Edit Seat" : "Add Seat"}</h2><p className="mt-0.5 text-sm text-slate-500">{editingId ? "Update the seat details." : "Create a new active salon seat."}</p></div></div><button type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close form" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-purple-50 hover:text-purple-600 disabled:opacity-50"><X size={19} /></button></div><div className="overflow-y-auto p-5 sm:p-6"><form className="space-y-5" onSubmit={onSubmit}><FormInput id="seat-name" label="Seat Name" value={form.name} placeholder="e.g. Seat 01" icon={<Armchair size={17} />} onChange={(value) => setForm((current) => ({ ...current, name: value }))} /><div><label htmlFor="seat-description" className="mb-1.5 block text-sm font-semibold text-slate-700">Description</label><div className="relative"><FileText size={17} className="pointer-events-none absolute left-3.5 top-3.5 text-purple-400" /><textarea id="seat-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe this salon seat" rows={4} className="w-full resize-none rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10" /></div></div><div className="flex items-start gap-3 rounded-xl border border-purple-100 bg-purple-50/70 p-4"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-700"><ShieldCheck size={17} /></div><div><p className="text-sm font-semibold text-purple-900">Seat Status</p><p className="mt-0.5 text-xs leading-5 text-purple-700">New and updated seats are saved as active automatically.</p></div></div><button type="submit" disabled={isSubmitting} className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 text-sm font-semibold text-white shadow-lg shadow-purple-300/30 transition hover:from-[#8B5CF6] hover:to-[#6D28D9] disabled:opacity-60">{isSubmitting ? <Loader2 size={18} className="animate-spin" /> : editingId ? <CheckCircle2 size={18} /> : <Plus size={18} />}{isSubmitting ? "Saving..." : editingId ? "Save Changes" : "Add Seat"}</button></form></div></div></div>;
+    return <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget && !isSubmitting) onClose(); }}><div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="flex items-start justify-between border-b border-slate-200 px-5 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-white shadow-lg shadow-purple-300/30">{editingId ? <Edit3 size={20} /> : <Armchair size={20} />}</div><div><h2 className="text-xl font-bold text-slate-900">{editingId ? "Edit Seat" : "Add Seat"}</h2><p className="mt-0.5 text-sm text-slate-500">{editingId ? "Update the seat details." : "Create a new active salon seat."}</p></div></div><button type="button" onClick={onClose} disabled={isSubmitting} aria-label="Close form" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-purple-50 hover:text-purple-600 disabled:opacity-50"><X size={19} /></button></div><div className="overflow-y-auto p-5 sm:p-6"><form className="space-y-5" onSubmit={onSubmit}><FormInput id="seat-name" label="Seat Name" value={form.name} placeholder="e.g. Seat 01" icon={<Armchair size={17} />} onChange={(value) => setForm((current) => ({ ...current, name: value }))} /><div><label htmlFor="seat-description" className="mb-1.5 block text-sm font-semibold text-slate-700">Description</label><div className="relative"><FileText size={17} className="pointer-events-none absolute left-3.5 top-3.5 text-purple-400" /><textarea id="seat-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe this salon seat" rows={4} className="w-full resize-none rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10" /></div></div><button type="button" onClick={() => setForm((current) => ({ ...current, isActive: !current.isActive }))} className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-4 text-left transition ${form.isActive ? "border-purple-200 bg-purple-50/70" : "border-slate-200 bg-slate-50"}`}><div className="flex items-center gap-3"><div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${form.isActive ? "bg-purple-100 text-purple-700" : "bg-slate-200 text-slate-500"}`}><ShieldCheck size={17} /></div><div><p className={`text-sm font-semibold ${form.isActive ? "text-purple-900" : "text-slate-600"}`}>{form.isActive ? "Active" : "Inactive"}</p><p className="text-xs text-slate-500">Inactive seats are hidden from bookings.</p></div></div><span className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition ${form.isActive ? "bg-purple-600" : "bg-slate-300"}`}><span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${form.isActive ? "translate-x-6" : "translate-x-1"}`} /></span></button><button type="submit" disabled={isSubmitting} className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 text-sm font-semibold text-white shadow-lg shadow-purple-300/30 transition hover:from-[#8B5CF6] hover:to-[#6D28D9] disabled:opacity-60">{isSubmitting ? <Loader2 size={18} className="animate-spin" /> : editingId ? <CheckCircle2 size={18} /> : <Plus size={18} />}{isSubmitting ? "Saving..." : editingId ? "Save Changes" : "Add Seat"}</button></form></div></div></div>;
 }
 
 function FormInput({ id, label, value, placeholder, icon, onChange }: { id: string; label: string; value: string; placeholder: string; icon: React.ReactNode; onChange: (value: string) => void }) { return <div><label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-slate-700">{label}<span className="ml-1 text-red-500">*</span></label><div className="relative"><div className="pointer-events-none absolute left-3.5 top-1/2 flex -translate-y-1/2 text-purple-400">{icon}</div><input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10" /></div></div>; }

@@ -10,6 +10,8 @@ import {
   Sparkles,
   CalendarClock,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getDayEndData } from "@/services/dayend-api";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -40,40 +42,40 @@ export default function Sidebar({
   const navigate = useNavigate();
   const collapsed = !isOpen && !isMobile;
 
-  // const [isDidDayEnd, setIsDidDayEnd] = useState(false);
+  const [isDidDayEnd, setIsDidDayEnd] = useState(false);
 
   const cashier = localStorage.getItem("cashier")
     ? JSON.parse(localStorage.getItem("cashier") as string)
     : null;
 
-  // const handleGetDayEndData = async () => {
-  //   const today = new Date().toISOString().split("T")[0];
+  const handleGetDayEndData = async () => {
+    const today = new Date().toISOString().split("T")[0];
 
-  //   try {
-  //     const res = await getDayEndData(today);
+    try {
+      const res = await getDayEndData(today);
 
-  //     if (res && res.length > 0) {
-  //       setIsDidDayEnd(true);
-  //       localStorage.setItem("dayEndData", JSON.stringify(res[0]));
-  //     } else {
-  //       setIsDidDayEnd(false);
-  //       localStorage.removeItem("dayEndData");
-  //     }
-  //   } catch (error) {
-  //     setIsDidDayEnd(false);
-  //     localStorage.removeItem("dayEndData");
-  //   }
-  // };
+      if (res && res.length > 0) {
+        setIsDidDayEnd(true);
+        localStorage.setItem("dayEndData", JSON.stringify(res[0]));
+      } else {
+        setIsDidDayEnd(false);
+        localStorage.removeItem("dayEndData");
+      }
+    } catch (error) {
+      setIsDidDayEnd(false);
+      localStorage.removeItem("dayEndData");
+    }
+  };
 
-  // useEffect(() => {
-  //   handleGetDayEndData();
-  // }, []);
+  useEffect(() => {
+    handleGetDayEndData();
+  }, []);
 
-  // const canAccessMenu = (itemId: string) => {
-  //   if (isDidDayEnd) return true;
+  const canAccessMenu = (itemId: string) => {
+    if (isDidDayEnd) return true;
 
-  //   return itemId === "dayend";
-  // };
+    return itemId === "dayend";
+  };
 
   const navItems: NavItem[] = [
     {
@@ -195,22 +197,20 @@ export default function Sidebar({
                 <div key={item.id}>
                   <button
                     onClick={() => {
-                      // if (!canAccessMenu(item.id)) return;
+                      if (!canAccessMenu(item.id)) return;
                       handleNavigation(item.path);
                     }}
-                    // disabled={!canAccessMenu(item.id)}
+                    disabled={!canAccessMenu(item.id)}
                     className={`${btnBase}
                       ${
                         active && !collapsed
                           ? "bg-purple-500/15 text-purple-200 shadow-sm"
                           : "text-slate-700 hover:bg-purple-50"
                       }
-                      cursor-pointer
                       ${
-                        // !canAccessMenu(item.id)
-                          // ? "opacity-50 cursor-not-allowed"
-                          // : ""
-                          ""
+                        !canAccessMenu(item.id)
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer"
                       }
                     `}
                   >
